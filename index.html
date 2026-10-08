@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高雄觀光景點歷年人數地圖</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #333; }
+    
+    #map { width: 100vw; height: 100vh; }
+
+    /* 控制面板 */
+    .control-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      width: 300px;
+      backdrop-filter: blur(5px);
+    }
+
+    .control-panel h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: #1e293b;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    input[type=range] { flex: 1; cursor: pointer; }
+
+    .year-display {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #0284c7;
+      min-width: 50px;
+    }
+
+    /* 圖例 (Legend) */
+    .legend {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.8rem;
+    }
+    .legend-title { font-weight: bold; margin-bottom: 6px; color: #64748b; }
+    .legend-items { display: flex; justify-content: space-between; }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-color { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+    /* Popup 樣式 */
+    .popup-title { font-weight: bold; font-size: 1.05rem; margin-bottom: 4px; color: #0f172a; }
+    .popup-count { color: #e11d48; font-size: 1.2rem; font-weight: bold; margin-top: 4px; }
+    .popup-closed { color: #64748b; font-size: 0.85rem; font-style: italic; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <div class="control-panel">
+    <h2>高雄觀光景點人數統計</h2>
+    <div class="slider-container">
+      <input type="range" id="yearSlider" min="2017" max="2022" step="1" value="2017">
+      <span class="year-display" id="yearLabel">2017</span> 年
+    </div>
+
+    <div class="legend">
+      <div class="legend-title">遊客人次級距</div>
+      <div class="legend-items">
+        <div class="legend-item"><span class="legend-color" style="background:#fdba74"></span> &lt;10萬</div>
+        <div class="legend-item"><span class="legend-color" style="background:#f97316"></span> 10萬-100萬</div>
+        <div class="legend-item"><span class="legend-color" style="background:#e11d48"></span> &gt;100萬</div>
+        <div class="legend-item"><span class="legend-color" style="background:#9ca3af; border:1px dashed #4b5563"></span> 無資料</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN 工具庫：Leaflet 地圖與 PapaParse CSV 解析器 -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <script>
+    // 1. 高雄 28 個景點的經緯度對照表
+    const COORDINATES = {
+      "壽山動物園": [22.6322, 120.2796],
+      "旗津風景區": [22.6133, 120.2678],
+      "蓮池潭": [22.6828, 120.2975],
+      "市立美術館": [22.6565, 120.2862],
+      "打狗英國領事館文化園區": [22.6186, 120.2661],
+      "高雄市立歷史博物館": [22.6268, 120.2872],
+      "國立科學工藝博物館": [22.6410, 120.3228],
+      "高雄市文化中心": [22.6256, 120.3175],
+      "音樂館": [22.6272, 120.2867],
+      "忠烈祠": [22.6247, 120.2736],
+      "左營孔廟": [22.6897, 120.2989],
+      "駁二藝術特區": [22.6198, 120.2818],
+      "陽明高雄海洋探索館": [22.6102, 120.2691],
+      "愛河（五福四路至博愛一路）": [22.6244, 120.2922],
+      "國家體育場（世運主場館）": [22.7042, 120.2947],
+      "美濃客家文物館": [22.8953, 120.5510],
+      "澄清湖": [22.6581, 120.3547],
+      "佛光山": [22.7538, 120.4439],
+      "旗山孔廟": [22.8885, 120.4802],
+      "茂林遊憩區": [22.8858, 120.6657],
+      "寶來/不老溫泉區": [23.1075, 120.6974],
+      "高雄農場": [22.8622, 120.5375],
+      "洲仔溼地": [22.6872, 120.2965],
+      "援中港溼地": [22.7230, 120.2642],
+      "金獅湖風景區": [22.6668, 120.3217],
+      "義大世界": [22.7303, 120.4069],
+      "月世界": [22.8884, 120.3892],
+      "紅毛港文化園區": [22.5539, 120.3308]
+    };
+
+    // 2. 初始化 Leaflet 地圖（設定中心於高雄）
+    const map = L.map('map').setView([22.65, 120.35], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let spotsData = [];
+    let markersMap = {};
+    let currentYear = '2017';
+
+    // 3. 視覺樣式函數（採用對數 Log10 計算圓圈半徑，避免人數差距極端導致遮擋）
+    function getRadius(visitors) {
+      if (!visitors || visitors <= 0) return 6;
+      const minRadius = 8, maxRadius = 32;
+      const logMin = Math.log10(1000);     // 基準 1 千人
+      const logMax = Math.log10(10000000); // 上限 1000 萬人
+      const logVal = Math.log10(Math.max(visitors, 1000));
+      return Math.min(Math.max(minRadius + ((logVal - logMin) / (logMax - logMin)) * (maxRadius - minRadius), minRadius), maxRadius);
+    }
+
+    // 計算半透明圓圈顏色
+    function getColor(visitors) {
+      if (!visitors || visitors <= 0) return '#9ca3af'; // 灰邊
+      if (visitors > 1000000) return '#e11d48';         // 深紅 (100萬+)
+      if (visitors > 100000)  return '#f97316';         // 橘色 (10萬-100萬)
+      return '#fdba74';                                 // 淺橘 (<10萬)
+    }
+
+    // 動態更新 Marker 樣式與彈出內容
+    function updateMarkers() {
+      spotsData.forEach(spot => {
+        const count = spot.history[currentYear] || 0;
+        const marker = markersMap[spot.name];
+
+        if (marker) {
+          const isClosed = count === 0;
+          marker.setRadius(getRadius(count));
+          marker.setStyle({
+            fillColor: getColor(count),
+            color: isClosed ? '#4b5563' : '#ffffff',
+            weight: isClosed ? 2 : 1,
+            dashArray: isClosed ? '3, 4' : null,
+            fillOpacity: isClosed ? 0.4 : 0.8
+          });
+
+          marker.bindPopup(`
+            <div class="popup-title">${spot.name}</div>
+            <div>${currentYear} 年統計人數：</div>
+            ${isClosed 
+              ? `<div class="popup-closed">⚠️ 當年度無統計數據 / 暫停開放</div>`
+              : `<div class="popup-count">${count.toLocaleString()} 人次</div>`
+            }
+          `);
+        }
+      });
+    }
+
+    // 4. 前端直接 Parsing 相對路徑下的 data.csv
+    Papa.parse('./data.csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const rawData = results.data;
+        const spotNames = Object.keys(COORDINATES);
+
+        // 動態取得 CSV 內的年份清單並設定 Slider 範圍
+        const years = rawData.map(row => String(parseInt(row['年度']))).filter(Boolean);
+        if (years.length > 0) {
+          const slider = document.getElementById('yearSlider');
+          slider.min = Math.min(...years);
+          slider.max = Math.max(...years);
+          slider.value = slider.min;
+          currentYear = String(slider.min);
+          document.getElementById('yearLabel').textContent = currentYear;
+        }
+
+        // 將 CSV 轉換為地圖記憶體資料格式
+        spotsData = spotNames.map(name => {
+          const coords = COORDINATES[name] || [22.6273, 120.3014];
+          const history = {};
+
+          rawData.forEach(row => {
+            const year = String(parseInt(row['年度']));
+            const count = parseInt(row[name]) || 0;
+            history[year] = count;
+          });
+
+          return { name, lat: coords[0], lng: coords[1], history };
+        });
+
+        // 初始化 Marker 繪製
+        spotsData.forEach(spot => {
+          const marker = L.circleMarker([spot.lat, spot.lng]).addTo(map);
+          markersMap[spot.name] = marker;
+        });
+
+        updateMarkers();
+      },
+      error: function(err) {
+        console.error('CSV 解析失敗：', err);
+      }
+    });
+
+    // 5. 滑桿年份切換事件監聽
+    document.getElementById('yearSlider').addEventListener('input', (e) => {
+      currentYear = e.target.value;
+      document.getElementById('yearLabel').textContent = currentYear;
+      updateMarkers();
+    });
+  </script>
+</body>
+</html>
