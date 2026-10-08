@@ -10,38 +10,109 @@
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #333; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+      color: #333;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
     
-    #map { width: 100vw; height: 100vh; }
-
-    /* 年份控制面板 */
-    .control-panel {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      width: 280px;
-      backdrop-filter: blur(5px);
+    /* 左側邊欄區域 */
+    .sidebar {
+      width: 320px;
+      height: 100vh;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      z-index: 1001;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
     }
 
-    .control-panel h2 { font-size: 1.1rem; margin-bottom: 10px; color: #1e293b; }
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid #f1f5f9;
+      background: #f8fafc;
+    }
 
-    .slider-container { display: flex; align-items: center; gap: 12px; }
+    .sidebar-header h2 {
+      font-size: 1.15rem;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     input[type=range] { flex: 1; cursor: pointer; }
-    .year-display { font-weight: bold; font-size: 1.2rem; color: #0284c7; min-width: 50px; }
+    .year-display { font-weight: bold; font-size: 1.1rem; color: #0284c7; min-width: 45px; }
 
-    /* 圖例 (Legend) */
-    .legend { margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 0.8rem; }
+    /* 圖例 */
+    .legend {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.75rem;
+    }
     .legend-title { font-weight: bold; margin-bottom: 6px; color: #64748b; }
-    .legend-items { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+    .legend-items { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; }
     .legend-item { display: flex; align-items: center; gap: 4px; }
-    .legend-color { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .legend-color { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
-    /* 點擊後的詳細資訊卡片 (Detail Panel) */
+    /* 景點列表清單 */
+    .spot-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+    }
+
+    .spot-item {
+      padding: 12px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.2s;
+    }
+
+    .spot-item:hover {
+      background: #f0f9ff;
+    }
+
+    .spot-item.active {
+      background: #e0f2fe;
+      border-left: 4px solid #0284c7;
+    }
+
+    .spot-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spot-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    .spot-visitors {
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: bold;
+    }
+
+    /* 地圖主區域 */
+    #map { 
+      flex: 1; 
+      height: 100vh; 
+    }
+
+    /* 右側點擊後的詳細資訊卡片 */
     .detail-card {
       position: absolute;
       top: 20px;
@@ -50,11 +121,11 @@
       background: rgba(255, 255, 255, 0.98);
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
       width: 320px;
       max-height: 85vh;
       overflow-y: auto;
-      display: none; /* 預設隱藏，點擊 Marker 後顯示 */
+      display: none;
       backdrop-filter: blur(5px);
     }
 
@@ -70,16 +141,7 @@
     }
     .detail-card .close-btn:hover { color: #334155; }
 
-    .detail-title { font-size: 1.25rem; font-weight: bold; color: #0f172a; margin-bottom: 12px; padding-right: 24px; }
-    
-    .stat-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      margin-bottom: 12px;
-    }
+    .detail-title { font-size: 1.2rem; font-weight: bold; color: #0f172a; margin-bottom: 12px; padding-right: 24px; }
 
     .current-stat {
       background: #f8fafc;
@@ -89,45 +151,49 @@
       border: 1px solid #e2e8f0;
     }
     .current-stat .label { font-size: 0.85rem; color: #64748b; }
-    .current-stat .value { font-size: 1.6rem; font-weight: bold; color: #e11d48; margin-top: 2px; }
+    .current-stat .value { font-size: 1.5rem; font-weight: bold; color: #e11d48; margin-top: 2px; }
 
-    /* 歷年趨勢清單 */
     .history-list { list-style: none; margin-top: 8px; }
     .history-item {
       display: flex;
       justify-content: space-between;
       padding: 8px 0;
       border-bottom: 1px dashed #f1f5f9;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
-    .history-item.active { font-weight: bold; color: #0284c7; background: #f0f9ff; padding-x: 6px; }
-    .history-item:last-child { border-bottom: none; }
+    .history-item.active { font-weight: bold; color: #0284c7; }
   </style>
 </head>
 <body>
 
-  <div id="map"></div>
+  <!-- 左側邊欄 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>高雄觀光景點歷年人數</h2>
+      <div class="slider-container">
+        <input type="range" id="yearSlider" min="2017" max="2022" step="1" value="2017">
+        <span class="year-display" id="yearLabel">2017</span> 年
+      </div>
 
-  <!-- 年份控制面板 -->
-  <div class="control-panel">
-    <h2>高雄觀光景點人數</h2>
-    <div class="slider-container">
-      <input type="range" id="yearSlider" min="2017" max="2022" step="1" value="2017">
-      <span class="year-display" id="yearLabel">2017</span> 年
-    </div>
-
-    <div class="legend">
-      <div class="legend-title">人數級距 (點擊圓點查看詳情)</div>
-      <div class="legend-items">
-        <div class="legend-item"><span class="legend-color" style="background:#fdba74"></span> &lt;10萬</div>
-        <div class="legend-item"><span class="legend-color" style="background:#f97316"></span> 10萬-100萬</div>
-        <div class="legend-item"><span class="legend-color" style="background:#e11d48"></span> &gt;100萬</div>
-        <div class="legend-item"><span class="legend-color" style="background:#9ca3af"></span> 無資料</div>
+      <div class="legend">
+        <div class="legend-title">人數級距說明</div>
+        <div class="legend-items">
+          <div class="legend-item"><span class="legend-color" style="background:#fdba74"></span> &lt;10萬</div>
+          <div class="legend-item"><span class="legend-color" style="background:#f97316"></span> 10萬-100萬</div>
+          <div class="legend-item"><span class="legend-color" style="background:#e11d48"></span> &gt;100萬</div>
+          <div class="legend-item"><span class="legend-color" style="background:#9ca3af"></span> 無資料</div>
+        </div>
       </div>
     </div>
+
+    <!-- 景點清單區塊 -->
+    <ul class="spot-list" id="spotList"></ul>
   </div>
 
-  <!-- 景點詳細資訊卡片 (點擊 Marker 後浮現) -->
+  <!-- 地圖容器 -->
+  <div id="map"></div>
+
+  <!-- 右側詳細資訊卡片 -->
   <div class="detail-card" id="detailCard">
     <button class="close-btn" onclick="closeDetailCard()">&times;</button>
     <div class="detail-title" id="cardSpotName">景點名稱</div>
@@ -188,52 +254,92 @@
     let spotsData = [];
     let markersMap = {};
     let currentYear = '2017';
-    let selectedSpot = null; // 當前被點擊選中的景點
+    let selectedSpot = null;
 
-    // 固定圓點大小 (純依靠顏色做區隔)
     const UNIFORM_RADIUS = 10;
 
     function getColor(visitors) {
-      if (!visitors || visitors <= 0) return '#9ca3af'; // 灰色無資料
+      if (!visitors || visitors <= 0) return '#9ca3af'; // 灰色
       if (visitors > 1000000) return '#e11d48';         // 紅色 >100萬
       if (visitors > 100000)  return '#f97316';         // 橘色 10萬-100萬
       return '#fdba74';                                 // 淺橘 <10萬
     }
 
-    // 更新地圖標記點顏色
-    function updateMarkers() {
-      spotsData.forEach(spot => {
-        const count = spot.history[currentYear] || 0;
-        const marker = markersMap[spot.name];
+    // 選取景點並導航至該位置
+    function selectSpot(spot) {
+      selectedSpot = spot;
 
-        if (marker) {
-          const isClosed = count === 0;
-          marker.setStyle({
-            radius: UNIFORM_RADIUS,
-            fillColor: getColor(count),
-            color: '#ffffff',
-            weight: 2,
-            fillOpacity: isClosed ? 0.4 : 0.85
-          });
-        }
+      // 流暢地圖平移並放大
+      map.flyTo([spot.lat, spot.lng], 14, {
+        duration: 1.2
       });
 
-      // 如果當前有開啟詳細卡片，同步更新卡片內容
+      // 更新列表 Active 狀態
+      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active'));
+      const activeItem = document.getElementById(`spot-item-${spot.name}`);
+      if (activeItem) {
+        activeItem.classList.add('active');
+        activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      renderDetailCard(spot);
+    }
+
+    // 更新 Marker 樣式與左側清單數據
+    function updateUI() {
+      const spotListEl = document.getElementById('spotList');
+      
+      // 按當前年份人數降冪排序清單
+      const sortedSpots = [...spotsData].sort((a, b) => {
+        return (b.history[currentYear] || 0) - (a.history[currentYear] || 0);
+      });
+
+      spotListEl.innerHTML = '';
+
+      sortedSpots.forEach(spot => {
+        const count = spot.history[currentYear] || 0;
+        const color = getColor(count);
+
+        // 1. 更新地圖圓點
+        const marker = markersMap[spot.name];
+        if (marker) {
+          marker.setStyle({
+            radius: UNIFORM_RADIUS,
+            fillColor: color,
+            color: '#ffffff',
+            weight: 2,
+            fillOpacity: count === 0 ? 0.4 : 0.85
+          });
+        }
+
+        // 2. 渲染側邊欄清單
+        const li = document.createElement('li');
+        li.id = `spot-item-${spot.name}`;
+        li.className = `spot-item ${selectedSpot && selectedSpot.name === spot.name ? 'active' : ''}`;
+        li.innerHTML = `
+          <div class="spot-info">
+            <span class="legend-color" style="background:${color}"></span>
+            <span class="spot-name">${spot.name}</span>
+          </div>
+          <span class="spot-visitors">${count > 0 ? (count/10000).toFixed(1) + ' 萬' : '無數據'}</span>
+        `;
+        li.onclick = () => selectSpot(spot);
+        spotListEl.appendChild(li);
+      });
+
       if (selectedSpot) {
         renderDetailCard(selectedSpot);
       }
     }
 
-    // 渲染詳細資訊卡片內容
+    // 渲染詳細卡片
     function renderDetailCard(spot) {
-      selectedSpot = spot;
       const count = spot.history[currentYear] || 0;
 
       document.getElementById('cardSpotName').textContent = spot.name;
       document.getElementById('cardYear').textContent = currentYear;
       document.getElementById('cardVisitors').textContent = count > 0 ? `${count.toLocaleString()} 人次` : '無統計數據 / 暫停開放';
 
-      // 產生歷年列表
       const historyList = document.getElementById('cardHistoryList');
       historyList.innerHTML = '';
       
@@ -254,9 +360,10 @@
     function closeDetailCard() {
       document.getElementById('detailCard').style.display = 'none';
       selectedSpot = null;
+      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active'));
     }
 
-    // 3. 讀取與解析 data.csv
+    // 3. 解析 data.csv
     Papa.parse('./data.csv', {
       download: true,
       header: true,
@@ -265,7 +372,6 @@
         const rawData = results.data;
         const spotNames = Object.keys(COORDINATES);
 
-        // 初始化年份選單
         const years = rawData.map(row => String(parseInt(row['年度']))).filter(Boolean);
         if (years.length > 0) {
           const slider = document.getElementById('yearSlider');
@@ -276,7 +382,6 @@
           document.getElementById('yearLabel').textContent = currentYear;
         }
 
-        // 資料格式化
         spotsData = spotNames.map(name => {
           const coords = COORDINATES[name] || [22.6273, 120.3014];
           const history = {};
@@ -290,34 +395,31 @@
           return { name, lat: coords[0], lng: coords[1], history };
         });
 
-        // 建立 Marker 點位與點擊（Click）事件監聽
+        // 建立 地圖圓點 Marker
         spotsData.forEach(spot => {
           const marker = L.circleMarker([spot.lat, spot.lng], {
             radius: UNIFORM_RADIUS
           }).addTo(map);
 
-          // 懸浮時滑鼠變手勢
           marker.on('mouseover', function () { this.setStyle({ weight: 4 }); });
           marker.on('mouseout', function () { this.setStyle({ weight: 2 }); });
 
-          // 點擊事件：開啟詳細資訊卡片並居中地圖
           marker.on('click', () => {
-            map.panTo([spot.lat, spot.lng]);
-            renderDetailCard(spot);
+            selectSpot(spot);
           });
 
           markersMap[spot.name] = marker;
         });
 
-        updateMarkers();
+        updateUI();
       }
     });
 
-    // 年份滑桿監聽
+    // 年份切換
     document.getElementById('yearSlider').addEventListener('input', (e) => {
       currentYear = e.target.value;
       document.getElementById('yearLabel').textContent = currentYear;
-      updateMarkers();
+      updateUI();
     });
   </script>
 </body>
