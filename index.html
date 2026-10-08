@@ -14,88 +14,139 @@
     
     #map { width: 100vw; height: 100vh; }
 
-    /* 控制面板 */
+    /* 年份控制面板 */
     .control-panel {
       position: absolute;
       top: 20px;
-      right: 20px;
+      left: 20px;
       z-index: 1000;
       background: rgba(255, 255, 255, 0.95);
       padding: 16px 20px;
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      width: 300px;
+      width: 280px;
       backdrop-filter: blur(5px);
     }
 
-    .control-panel h2 {
-      font-size: 1.1rem;
-      margin-bottom: 12px;
-      color: #1e293b;
-    }
+    .control-panel h2 { font-size: 1.1rem; margin-bottom: 10px; color: #1e293b; }
 
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
+    .slider-container { display: flex; align-items: center; gap: 12px; }
     input[type=range] { flex: 1; cursor: pointer; }
-
-    .year-display {
-      font-weight: bold;
-      font-size: 1.2rem;
-      color: #0284c7;
-      min-width: 50px;
-    }
+    .year-display { font-weight: bold; font-size: 1.2rem; color: #0284c7; min-width: 50px; }
 
     /* 圖例 (Legend) */
-    .legend {
-      margin-top: 14px;
-      padding-top: 10px;
-      border-top: 1px solid #e2e8f0;
-      font-size: 0.8rem;
-    }
+    .legend { margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 0.8rem; }
     .legend-title { font-weight: bold; margin-bottom: 6px; color: #64748b; }
-    .legend-items { display: flex; justify-content: space-between; }
+    .legend-items { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
     .legend-item { display: flex; align-items: center; gap: 4px; }
     .legend-color { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 
-    /* Popup 樣式 */
-    .popup-title { font-weight: bold; font-size: 1.05rem; margin-bottom: 4px; color: #0f172a; }
-    .popup-count { color: #e11d48; font-size: 1.2rem; font-weight: bold; margin-top: 4px; }
-    .popup-closed { color: #64748b; font-size: 0.85rem; font-style: italic; margin-top: 4px; }
+    /* 點擊後的詳細資訊卡片 (Detail Panel) */
+    .detail-card {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.98);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      width: 320px;
+      max-height: 85vh;
+      overflow-y: auto;
+      display: none; /* 預設隱藏，點擊 Marker 後顯示 */
+      backdrop-filter: blur(5px);
+    }
+
+    .detail-card .close-btn {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: #94a3b8;
+      cursor: pointer;
+    }
+    .detail-card .close-btn:hover { color: #334155; }
+
+    .detail-title { font-size: 1.25rem; font-weight: bold; color: #0f172a; margin-bottom: 12px; padding-right: 24px; }
+    
+    .stat-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .current-stat {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #e2e8f0;
+    }
+    .current-stat .label { font-size: 0.85rem; color: #64748b; }
+    .current-stat .value { font-size: 1.6rem; font-weight: bold; color: #e11d48; margin-top: 2px; }
+
+    /* 歷年趨勢清單 */
+    .history-list { list-style: none; margin-top: 8px; }
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed #f1f5f9;
+      font-size: 0.9rem;
+    }
+    .history-item.active { font-weight: bold; color: #0284c7; background: #f0f9ff; padding-x: 6px; }
+    .history-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
 
   <div id="map"></div>
 
+  <!-- 年份控制面板 -->
   <div class="control-panel">
-    <h2>高雄觀光景點人數統計</h2>
+    <h2>高雄觀光景點人數</h2>
     <div class="slider-container">
       <input type="range" id="yearSlider" min="2017" max="2022" step="1" value="2017">
       <span class="year-display" id="yearLabel">2017</span> 年
     </div>
 
     <div class="legend">
-      <div class="legend-title">遊客人次級距</div>
+      <div class="legend-title">人數級距 (點擊圓點查看詳情)</div>
       <div class="legend-items">
         <div class="legend-item"><span class="legend-color" style="background:#fdba74"></span> &lt;10萬</div>
         <div class="legend-item"><span class="legend-color" style="background:#f97316"></span> 10萬-100萬</div>
         <div class="legend-item"><span class="legend-color" style="background:#e11d48"></span> &gt;100萬</div>
-        <div class="legend-item"><span class="legend-color" style="background:#9ca3af; border:1px dashed #4b5563"></span> 無資料</div>
+        <div class="legend-item"><span class="legend-color" style="background:#9ca3af"></span> 無資料</div>
       </div>
     </div>
   </div>
 
-  <!-- CDN 工具庫：Leaflet 地圖與 PapaParse CSV 解析器 -->
+  <!-- 景點詳細資訊卡片 (點擊 Marker 後浮現) -->
+  <div class="detail-card" id="detailCard">
+    <button class="close-btn" onclick="closeDetailCard()">&times;</button>
+    <div class="detail-title" id="cardSpotName">景點名稱</div>
+    
+    <div class="current-stat">
+      <div class="label"><span id="cardYear">2017</span> 年遊客人數</div>
+      <div class="value" id="cardVisitors">0 人次</div>
+    </div>
+
+    <div style="font-weight: bold; font-size: 0.9rem; color: #475569; margin-bottom: 6px;">歷年數據紀錄</div>
+    <ul class="history-list" id="cardHistoryList"></ul>
+  </div>
+
+  <!-- CDN 工具庫 -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <script>
-    // 1. 高雄 28 個景點的經緯度對照表
+    // 1. 景點經緯度
     const COORDINATES = {
       "壽山動物園": [22.6322, 120.2796],
       "旗津風景區": [22.6133, 120.2678],
@@ -127,7 +178,7 @@
       "紅毛港文化園區": [22.5539, 120.3308]
     };
 
-    // 2. 初始化 Leaflet 地圖（設定中心於高雄）
+    // 2. 初始化地圖
     const map = L.map('map').setView([22.65, 120.35], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -137,26 +188,19 @@
     let spotsData = [];
     let markersMap = {};
     let currentYear = '2017';
+    let selectedSpot = null; // 當前被點擊選中的景點
 
-    // 3. 視覺樣式函數（採用對數 Log10 計算圓圈半徑，避免人數差距極端導致遮擋）
-    function getRadius(visitors) {
-      if (!visitors || visitors <= 0) return 6;
-      const minRadius = 8, maxRadius = 32;
-      const logMin = Math.log10(1000);     // 基準 1 千人
-      const logMax = Math.log10(10000000); // 上限 1000 萬人
-      const logVal = Math.log10(Math.max(visitors, 1000));
-      return Math.min(Math.max(minRadius + ((logVal - logMin) / (logMax - logMin)) * (maxRadius - minRadius), minRadius), maxRadius);
-    }
+    // 固定圓點大小 (純依靠顏色做區隔)
+    const UNIFORM_RADIUS = 10;
 
-    // 計算半透明圓圈顏色
     function getColor(visitors) {
-      if (!visitors || visitors <= 0) return '#9ca3af'; // 灰邊
-      if (visitors > 1000000) return '#e11d48';         // 深紅 (100萬+)
-      if (visitors > 100000)  return '#f97316';         // 橘色 (10萬-100萬)
-      return '#fdba74';                                 // 淺橘 (<10萬)
+      if (!visitors || visitors <= 0) return '#9ca3af'; // 灰色無資料
+      if (visitors > 1000000) return '#e11d48';         // 紅色 >100萬
+      if (visitors > 100000)  return '#f97316';         // 橘色 10萬-100萬
+      return '#fdba74';                                 // 淺橘 <10萬
     }
 
-    // 動態更新 Marker 樣式與彈出內容
+    // 更新地圖標記點顏色
     function updateMarkers() {
       spotsData.forEach(spot => {
         const count = spot.history[currentYear] || 0;
@@ -164,28 +208,55 @@
 
         if (marker) {
           const isClosed = count === 0;
-          marker.setRadius(getRadius(count));
           marker.setStyle({
+            radius: UNIFORM_RADIUS,
             fillColor: getColor(count),
-            color: isClosed ? '#4b5563' : '#ffffff',
-            weight: isClosed ? 2 : 1,
-            dashArray: isClosed ? '3, 4' : null,
-            fillOpacity: isClosed ? 0.4 : 0.8
+            color: '#ffffff',
+            weight: 2,
+            fillOpacity: isClosed ? 0.4 : 0.85
           });
-
-          marker.bindPopup(`
-            <div class="popup-title">${spot.name}</div>
-            <div>${currentYear} 年統計人數：</div>
-            ${isClosed 
-              ? `<div class="popup-closed">⚠️ 當年度無統計數據 / 暫停開放</div>`
-              : `<div class="popup-count">${count.toLocaleString()} 人次</div>`
-            }
-          `);
         }
       });
+
+      // 如果當前有開啟詳細卡片，同步更新卡片內容
+      if (selectedSpot) {
+        renderDetailCard(selectedSpot);
+      }
     }
 
-    // 4. 前端直接 Parsing 相對路徑下的 data.csv
+    // 渲染詳細資訊卡片內容
+    function renderDetailCard(spot) {
+      selectedSpot = spot;
+      const count = spot.history[currentYear] || 0;
+
+      document.getElementById('cardSpotName').textContent = spot.name;
+      document.getElementById('cardYear').textContent = currentYear;
+      document.getElementById('cardVisitors').textContent = count > 0 ? `${count.toLocaleString()} 人次` : '無統計數據 / 暫停開放';
+
+      // 產生歷年列表
+      const historyList = document.getElementById('cardHistoryList');
+      historyList.innerHTML = '';
+      
+      Object.keys(spot.history).sort().reverse().forEach(yr => {
+        const yrCount = spot.history[yr];
+        const li = document.createElement('li');
+        li.className = `history-item ${yr === currentYear ? 'active' : ''}`;
+        li.innerHTML = `
+          <span>${yr} 年</span>
+          <span>${yrCount > 0 ? yrCount.toLocaleString() + ' 人' : '無數據'}</span>
+        `;
+        historyList.appendChild(li);
+      });
+
+      document.getElementById('detailCard').style.display = 'block';
+    }
+
+    function closeDetailCard() {
+      document.getElementById('detailCard').style.display = 'none';
+      selectedSpot = null;
+    }
+
+    // 3. 讀取與解析 data.csv
     Papa.parse('./data.csv', {
       download: true,
       header: true,
@@ -194,7 +265,7 @@
         const rawData = results.data;
         const spotNames = Object.keys(COORDINATES);
 
-        // 動態取得 CSV 內的年份清單並設定 Slider 範圍
+        // 初始化年份選單
         const years = rawData.map(row => String(parseInt(row['年度']))).filter(Boolean);
         if (years.length > 0) {
           const slider = document.getElementById('yearSlider');
@@ -205,7 +276,7 @@
           document.getElementById('yearLabel').textContent = currentYear;
         }
 
-        // 將 CSV 轉換為地圖記憶體資料格式
+        // 資料格式化
         spotsData = spotNames.map(name => {
           const coords = COORDINATES[name] || [22.6273, 120.3014];
           const history = {};
@@ -219,20 +290,30 @@
           return { name, lat: coords[0], lng: coords[1], history };
         });
 
-        // 初始化 Marker 繪製
+        // 建立 Marker 點位與點擊（Click）事件監聽
         spotsData.forEach(spot => {
-          const marker = L.circleMarker([spot.lat, spot.lng]).addTo(map);
+          const marker = L.circleMarker([spot.lat, spot.lng], {
+            radius: UNIFORM_RADIUS
+          }).addTo(map);
+
+          // 懸浮時滑鼠變手勢
+          marker.on('mouseover', function () { this.setStyle({ weight: 4 }); });
+          marker.on('mouseout', function () { this.setStyle({ weight: 2 }); });
+
+          // 點擊事件：開啟詳細資訊卡片並居中地圖
+          marker.on('click', () => {
+            map.panTo([spot.lat, spot.lng]);
+            renderDetailCard(spot);
+          });
+
           markersMap[spot.name] = marker;
         });
 
         updateMarkers();
-      },
-      error: function(err) {
-        console.error('CSV 解析失敗：', err);
       }
     });
 
-    // 5. 滑桿年份切換事件監聽
+    // 年份滑桿監聽
     document.getElementById('yearSlider').addEventListener('input', (e) => {
       currentYear = e.target.value;
       document.getElementById('yearLabel').textContent = currentYear;
