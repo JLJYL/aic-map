@@ -7,58 +7,81 @@
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- FontAwesome 圖示庫 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-      color: #333;
+      color: #1e293b;
       display: flex;
       height: 100vh;
       overflow: hidden;
+      background: #f8fafc;
     }
     
     /* 左側邊欄區域 */
     .sidebar {
-      width: 320px;
+      width: 340px;
       height: 100vh;
-      background: #ffffff;
-      border-right: 1px solid #e2e8f0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid rgba(226, 232, 240, 0.8);
       display: flex;
       flex-direction: column;
       z-index: 1001;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+      box-shadow: 4px 0 20px rgba(0,0,0,0.06);
     }
 
     .sidebar-header {
-      padding: 20px;
+      padding: 24px 20px 16px 20px;
       border-bottom: 1px solid #f1f5f9;
-      background: #f8fafc;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     }
 
     .sidebar-header h2 {
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       color: #0f172a;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-header h2 i {
+      color: #0284c7;
     }
 
     .slider-container {
+      background: #ffffff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e2e8f0;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
-    input[type=range] { flex: 1; cursor: pointer; }
-    .year-display { font-weight: bold; font-size: 1.1rem; color: #0284c7; min-width: 45px; }
+    input[type=range] {
+      flex: 1;
+      cursor: pointer;
+      accent-color: #0284c7;
+    }
+    .year-display {
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #0284c7;
+      min-width: 50px;
+    }
 
     /* 圖例 */
     .legend {
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px solid #e2e8f0;
-      font-size: 0.75rem;
+      margin-top: 14px;
+      font-size: 0.78rem;
     }
-    .legend-title { font-weight: bold; margin-bottom: 6px; color: #64748b; }
-    .legend-items { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; }
+    .legend-title { font-weight: 600; margin-bottom: 6px; color: #64748b; }
+    .legend-items { display: flex; justify-content: space-between; gap: 4px; }
     .legend-item { display: flex; align-items: center; gap: 4px; }
     .legend-color { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
@@ -67,25 +90,33 @@
       flex: 1;
       overflow-y: auto;
       list-style: none;
+      padding: 8px 12px;
     }
 
     .spot-item {
-      padding: 12px 20px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      transition: background 0.2s;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
+      background: #ffffff;
     }
 
     .spot-item:hover {
       background: #f0f9ff;
+      transform: translateX(4px);
+      border-color: #bae6fd;
     }
 
     .spot-item.active {
-      background: #e0f2fe;
-      border-left: 4px solid #0284c7;
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      border-color: #38bdf8;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+      transform: translateX(6px);
     }
 
     .spot-info {
@@ -94,16 +125,33 @@
       gap: 10px;
     }
 
+    .spot-rank {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #64748b;
+      background: #f1f5f9;
+    }
+
+    .rank-1 { background: #fef08a; color: #854d0e; }
+    .rank-2 { background: #e2e8f0; color: #334155; }
+    .rank-3 { background: #ffedd5; color: #9a3412; }
+
     .spot-name {
-      font-size: 0.95rem;
-      font-weight: 500;
+      font-size: 0.92rem;
+      font-weight: 600;
       color: #334155;
     }
 
     .spot-visitors {
       font-size: 0.85rem;
-      color: #64748b;
-      font-weight: bold;
+      color: #0284c7;
+      font-weight: 700;
     }
 
     /* 地圖主區域 */
@@ -112,56 +160,82 @@
       height: 100vh; 
     }
 
+    /* 呼吸脈衝波紋效果 (動態在地圖上的圓點發光) */
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+      70% { transform: scale(1.3); box-shadow: 0 0 0 14px rgba(2, 132, 199, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+    }
+
     /* 右側點擊後的詳細資訊卡片 */
     .detail-card {
       position: absolute;
       top: 20px;
       right: 20px;
       z-index: 1000;
-      background: rgba(255, 255, 255, 0.98);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      width: 320px;
-      max-height: 85vh;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      padding: 22px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      width: 350px;
+      max-height: 90vh;
       overflow-y: auto;
       display: none;
-      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .detail-card .close-btn {
       position: absolute;
-      top: 12px;
-      right: 16px;
-      background: none;
+      top: 16px;
+      right: 18px;
+      background: #f1f5f9;
       border: none;
-      font-size: 1.4rem;
-      color: #94a3b8;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      color: #64748b;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
     }
-    .detail-card .close-btn:hover { color: #334155; }
+    .detail-card .close-btn:hover { background: #e2e8f0; color: #0f172a; }
 
-    .detail-title { font-size: 1.2rem; font-weight: bold; color: #0f172a; margin-bottom: 12px; padding-right: 24px; }
+    .detail-title { 
+      font-size: 1.25rem; 
+      font-weight: 800; 
+      color: #0f172a; 
+      margin-bottom: 14px; 
+      padding-right: 32px; 
+    }
 
     .current-stat {
-      background: #f8fafc;
-      padding: 12px;
-      border-radius: 8px;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
       margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+    }
+    .current-stat .label { font-size: 0.85rem; opacity: 0.9; }
+    .current-stat .value { font-size: 1.8rem; font-weight: 800; margin-top: 4px; }
+
+    .chart-container {
+      margin-top: 12px;
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 12px;
       border: 1px solid #e2e8f0;
     }
-    .current-stat .label { font-size: 0.85rem; color: #64748b; }
-    .current-stat .value { font-size: 1.5rem; font-weight: bold; color: #e11d48; margin-top: 2px; }
-
-    .history-list { list-style: none; margin-top: 8px; }
-    .history-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px dashed #f1f5f9;
-      font-size: 0.85rem;
-    }
-    .history-item.active { font-weight: bold; color: #0284c7; }
   </style>
 </head>
 <body>
@@ -169,7 +243,7 @@
   <!-- 左側邊欄 -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <h2>高雄觀光景點歷年人數</h2>
+      <h2><i class="fa-solid fa-map-location-dot"></i> 高雄景點觀光人次</h2>
       <div class="slider-container">
         <input type="range" id="yearSlider" min="2017" max="2022" step="1" value="2017">
         <span class="year-display" id="yearLabel">2017</span> 年
@@ -195,21 +269,28 @@
 
   <!-- 右側詳細資訊卡片 -->
   <div class="detail-card" id="detailCard">
-    <button class="close-btn" onclick="closeDetailCard()">&times;</button>
+    <button class="close-btn" onclick="closeDetailCard()"><i class="fa-solid fa-xmark"></i></button>
     <div class="detail-title" id="cardSpotName">景點名稱</div>
     
     <div class="current-stat">
-      <div class="label"><span id="cardYear">2017</span> 年遊客人數</div>
+      <div class="label"><span id="cardYear">2017</span> 年造訪總人次</div>
       <div class="value" id="cardVisitors">0 人次</div>
     </div>
 
-    <div style="font-weight: bold; font-size: 0.9rem; color: #475569; margin-bottom: 6px;">歷年數據紀錄</div>
-    <ul class="history-list" id="cardHistoryList"></ul>
+    <!-- Chart.js 歷年趨勢圖表 -->
+    <div class="chart-container">
+      <div style="font-weight: 700; font-size: 0.85rem; color: #475569; margin-bottom: 8px;">
+        <i class="fa-solid fa-chart-line"></i> 歷年訪客趨勢圖
+      </div>
+      <canvas id="historyChart" height="180"></canvas>
+    </div>
   </div>
 
   <!-- CDN 工具庫 -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Chart.js 視覺圖表庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
     // 1. 景點經緯度
@@ -255,26 +336,25 @@
     let markersMap = {};
     let currentYear = '2017';
     let selectedSpot = null;
+    let historyChart = null;
 
     const UNIFORM_RADIUS = 10;
 
     function getColor(visitors) {
-      if (!visitors || visitors <= 0) return '#9ca3af'; // 灰色
-      if (visitors > 1000000) return '#e11d48';         // 紅色 >100萬
-      if (visitors > 100000)  return '#f97316';         // 橘色 10萬-100萬
-      return '#fdba74';                                 // 淺橘 <10萬
+      if (!visitors || visitors <= 0) return '#9ca3af'; 
+      if (visitors > 1000000) return '#e11d48';         
+      if (visitors > 100000)  return '#f97316';         
+      return '#fdba74';                                 
     }
 
-    // 選取景點並導航至該位置
+    // 選取景點導航
     function selectSpot(spot) {
       selectedSpot = spot;
 
-      // 流暢地圖平移並放大
       map.flyTo([spot.lat, spot.lng], 14, {
         duration: 1.2
       });
 
-      // 更新列表 Active 狀態
       document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active'));
       const activeItem = document.getElementById(`spot-item-${spot.name}`);
       if (activeItem) {
@@ -285,22 +365,21 @@
       renderDetailCard(spot);
     }
 
-    // 更新 Marker 樣式與左側清單數據
+    // 更新 UI 數據與清單
     function updateUI() {
       const spotListEl = document.getElementById('spotList');
       
-      // 按當前年份人數降冪排序清單
       const sortedSpots = [...spotsData].sort((a, b) => {
         return (b.history[currentYear] || 0) - (a.history[currentYear] || 0);
       });
 
       spotListEl.innerHTML = '';
 
-      sortedSpots.forEach(spot => {
+      sortedSpots.forEach((spot, idx) => {
         const count = spot.history[currentYear] || 0;
         const color = getColor(count);
 
-        // 1. 更新地圖圓點
+        // 1. 地圖 Marker
         const marker = markersMap[spot.name];
         if (marker) {
           marker.setStyle({
@@ -312,12 +391,19 @@
           });
         }
 
-        // 2. 渲染側邊欄清單
+        // 2. 左側清單（含前三名勳章標籤）
         const li = document.createElement('li');
         li.id = `spot-item-${spot.name}`;
         li.className = `spot-item ${selectedSpot && selectedSpot.name === spot.name ? 'active' : ''}`;
+        
+        let rankBadge = `<span class="spot-rank">${idx + 1}</span>`;
+        if (idx === 0) rankBadge = `<span class="spot-rank rank-1"><i class="fa-solid fa-crown"></i></span>`;
+        else if (idx === 1) rankBadge = `<span class="spot-rank rank-2">2</span>`;
+        else if (idx === 2) rankBadge = `<span class="spot-rank rank-3">3</span>`;
+
         li.innerHTML = `
           <div class="spot-info">
+            ${rankBadge}
             <span class="legend-color" style="background:${color}"></span>
             <span class="spot-name">${spot.name}</span>
           </div>
@@ -332,26 +418,73 @@
       }
     }
 
-    // 渲染詳細卡片
+    // 數字滾動動畫效果
+    function animateValue(obj, start, end, duration) {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const val = Math.floor(progress * (end - start) + start);
+        obj.innerHTML = val > 0 ? `${val.toLocaleString()} 人次` : '無統計數據';
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    // 渲染詳細資訊卡片與圖表
     function renderDetailCard(spot) {
       const count = spot.history[currentYear] || 0;
 
       document.getElementById('cardSpotName').textContent = spot.name;
       document.getElementById('cardYear').textContent = currentYear;
-      document.getElementById('cardVisitors').textContent = count > 0 ? `${count.toLocaleString()} 人次` : '無統計數據 / 暫停開放';
 
-      const historyList = document.getElementById('cardHistoryList');
-      historyList.innerHTML = '';
-      
-      Object.keys(spot.history).sort().reverse().forEach(yr => {
-        const yrCount = spot.history[yr];
-        const li = document.createElement('li');
-        li.className = `history-item ${yr === currentYear ? 'active' : ''}`;
-        li.innerHTML = `
-          <span>${yr} 年</span>
-          <span>${yrCount > 0 ? yrCount.toLocaleString() + ' 人' : '無數據'}</span>
-        `;
-        historyList.appendChild(li);
+      // 數字動態計數動畫
+      const visitorsEl = document.getElementById('cardVisitors');
+      animateValue(visitorsEl, 0, count, 600);
+
+      // 繪製/更新 Chart.js 趨勢圖表
+      const years = Object.keys(spot.history).sort();
+      const counts = years.map(y => spot.history[y]);
+
+      const ctx = document.getElementById('historyChart').getContext('2d');
+      if (historyChart) {
+        historyChart.destroy();
+      }
+
+      historyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: years.map(y => y + '年'),
+          datasets: [{
+            label: '造訪人次',
+            data: counts,
+            borderColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#0284c7'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value >= 10000 ? (value / 10000) + '萬' : value;
+                }
+              }
+            }
+          }
+        }
       });
 
       document.getElementById('detailCard').style.display = 'block';
@@ -395,7 +528,7 @@
           return { name, lat: coords[0], lng: coords[1], history };
         });
 
-        // 建立 地圖圓點 Marker
+        // 建立 地圖 Marker
         spotsData.forEach(spot => {
           const marker = L.circleMarker([spot.lat, spot.lng], {
             radius: UNIFORM_RADIUS
