@@ -118,16 +118,18 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // 建立 MarkerClusterGroup (點位聚合)
+    // 建立優化後的 MarkerClusterGroup
     const markersCluster = L.markerClusterGroup({
       chunkedLoading: true,
-      maxClusterRadius: 50
+      maxClusterRadius: 25,          // 縮小聚合半徑，稍微靠近就分開
+      disableClusteringAtZoom: 16,  // 地圖放大到 16 級（街道層級）時，自動解散所有圈圈，全數呈現在地圖上
+      spiderfyOnMaxZoom: true       // 同座標點擊時以蜘蛛網狀展開
     });
     map.addLayer(markersCluster);
 
     // 全域變數
     let allStores = [];
-    let markerMap = new Map(); // 用來對照 Store ID 與 Marker
+    let markerMap = new Map();
     let taichungBounds = L.latLngBounds();
 
     // 載入與解析 CSV 資料
