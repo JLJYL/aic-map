@@ -1,588 +1,315 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>臺中市消費店家地圖</title>
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    
-    <!-- Leaflet MarkerCluster CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>臺中市消費店家地圖</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- PapaParse -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-    <style>
-        body {
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        /* Custom Popup Styling for Leaflet */
-        .leaflet-popup-content-wrapper {
-            border-radius: 1rem;
-            padding: 0;
-            overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(229, 231, 235, 1);
-        }
-
-        .leaflet-popup-content {
-            margin: 0 !important;
-            width: 310px !important;
-            max-width: 85vw !important;
-        }
-
-        .leaflet-container a.leaflet-popup-close-button {
-            top: 10px;
-            right: 10px;
-            color: #ffffff;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 9999px;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
-
-        .leaflet-container a.leaflet-popup-close-button:hover {
-            background: rgba(0, 0, 0, 0.6);
-            color: #ffffff;
-        }
-
-        /* Custom Scrollbar Styling */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
-        /* Marker Cluster Custom Design Overrides */
-        .marker-cluster-small {
-            background-color: rgba(59, 130, 246, 0.6) !important;
-        }
-        .marker-cluster-small div {
-            background-color: rgba(37, 99, 235, 0.85) !important;
-            color: white !important;
-            font-weight: 700;
-        }
-        .marker-cluster-medium {
-            background-color: rgba(245, 158, 11, 0.6) !important;
-        }
-        .marker-cluster-medium div {
-            background-color: rgba(217, 119, 6, 0.85) !important;
-            color: white !important;
-            font-weight: 700;
-        }
-        .marker-cluster-large {
-            background-color: rgba(239, 68, 68, 0.6) !important;
-        }
-        .marker-cluster-large div {
-            background-color: rgba(220, 38, 38, 0.85) !important;
-            color: white !important;
-            font-weight: 700;
-        }
-
-        /* Floating Panel Transition for Mobile */
-        @media (max-width: 768px) {
-            .mobile-panel-collapsed {
-                transform: translateY(calc(100% - 60px));
-            }
-        }
-    </style>
+  <style>
+    /* 自訂地圖 Popup 樣式與滾動條 */
+    .custom-popup .leaflet-popup-content-wrapper {
+      padding: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .custom-popup .leaflet-popup-content {
+      margin: 0;
+      width: 280px !important;
+    }
+    .popup-scroll {
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    .popup-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .popup-scroll::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body class="bg-slate-100 text-slate-800 h-screen w-screen overflow-hidden flex flex-col md:flex-row">
+<body class="bg-slate-100 h-screen flex flex-col md:flex-row overflow-hidden font-sans">
 
-    <!-- Sidebar / Navigation Panel -->
-    <aside id="sidebar" class="w-full md:w-96 bg-white flex flex-col z-20 shadow-xl border-r border-slate-200 transition-all duration-300 h-1/2 md:h-full relative order-2 md:order-1">
-        
-        <!-- Sidebar Header -->
-        <div class="p-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-store text-2xl text-yellow-300"></i>
-                    <div>
-                        <h1 class="font-bold text-lg leading-tight">臺中市消費店家地圖</h1>
-                        <p class="text-xs text-blue-100">Taichung Shopping & Store Map</p>
-                    </div>
-                </div>
-                <button id="refresh-btn" class="text-xs bg-white/20 hover:bg-white/30 p-2 rounded-lg transition" title="重設地圖與搜尋">
-                    <i class="fa-solid fa-rotate"></i>
-                </button>
-            </div>
-
-            <!-- Search Bar -->
-            <div class="mt-4 relative">
-                <input type="text" id="search-input" placeholder="搜尋店家名稱、簡介或關鍵字..." 
-                       class="w-full pl-9 pr-8 py-2 text-sm bg-white/10 text-white placeholder-blue-200 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:bg-white focus:text-slate-900 focus:placeholder-slate-400 transition">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-blue-200 text-sm" id="search-icon"></i>
-                <button id="clear-search" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-sm"></i>
-                </button>
-            </div>
+  <!-- 側邊欄 / 搜尋與店家列表 -->
+  <aside class="w-full md:w-96 bg-white z-20 flex flex-col shadow-lg h-1/2 md:h-full border-r border-slate-200">
+    <!-- 標題列 -->
+    <div class="p-4 bg-indigo-600 text-white flex items-center justify-between shadow-md">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-store text-2xl text-amber-300"></i>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">臺中市消費店家地圖</h1>
+          <p class="text-xs text-indigo-200">Taichung Shopping & Store Map</p>
         </div>
+      </div>
+      <button id="reset-view-btn" title="重設地圖視野" class="bg-indigo-500 hover:bg-indigo-400 text-white p-2 rounded-lg transition duration-150">
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
+    </div>
 
-        <!-- Filter Stats & Quick Options Bar -->
-        <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600">
-            <div>
-                顯示數量：<span id="store-count" class="font-bold text-blue-600 text-sm">0</span> / <span id="total-count">0</span> 筆
+    <!-- 搜尋框區塊 -->
+    <div class="p-4 border-b border-slate-100 bg-slate-50 space-y-3">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="search-input" placeholder="搜尋店家名稱、簡介或關鍵字..." 
+               class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+      </div>
+      <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+        <span>顯示數量：<strong id="store-count" class="text-indigo-600 font-bold">0</strong> / <span id="total-count">0</span> 筆</span>
+        <button id="fit-taichung-btn" class="text-indigo-600 hover:underline flex items-center space-x-1">
+          <i class="fa-solid fa-expand"></i>
+          <span>看全台中</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 店家清單列表 -->
+    <div id="store-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1">
+      <div class="p-8 text-center text-slate-400">
+        <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-indigo-500"></i>
+        <p class="text-sm">正在讀取店家資料...</p>
+      </div>
+    </div>
+
+    <!-- 頁尾資訊與備用上傳區 -->
+    <div class="p-3 border-t border-slate-200 bg-slate-50 text-xs text-slate-400 flex justify-between items-center">
+      <span>資料來源：台中市消費.csv</span>
+      <label class="cursor-pointer text-indigo-600 hover:underline">
+        手動匯入 CSV
+        <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+      </label>
+    </div>
+  </aside>
+
+  <!-- 地圖容器 -->
+  <main class="flex-1 h-1/2 md:h-full relative">
+    <div id="map" class="w-full h-full z-10"></div>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet MarkerCluster JS -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <script>
+    // 初始化地圖 (預設定位於臺中市政府周邊)
+    const defaultCenter = [24.16183, 120.64689];
+    const defaultZoom = 13;
+    const map = L.map('map', { zoomControl: false }).setView(defaultCenter, defaultZoom);
+
+    // 加入 Zoom Control 到右上方
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // 加入 OpenStreetMap 圖層
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // 建立 MarkerClusterGroup (點位聚合)
+    const markersCluster = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 50
+    });
+    map.addLayer(markersCluster);
+
+    // 全域變數
+    let allStores = [];
+    let markerMap = new Map(); // 用來對照 Store ID 與 Marker
+    let taichungBounds = L.latLngBounds();
+
+    // 載入與解析 CSV 資料
+    function loadCSVData(source) {
+      Papa.parse(source, {
+        download: typeof source === 'string',
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          processStoreData(results.data);
+        },
+        error: function(err) {
+          console.error("CSV 解析失敗：", err);
+          alert("無法自動載入 CSV 檔案，請確認同目錄下是否有「台中市消費.csv」或使用手動上傳。");
+        }
+      });
+    }
+
+    // 處理與繪製店家資料
+    function processStoreData(data) {
+      allStores = [];
+      markersCluster.clearLayers();
+      markerMap.clear();
+      taichungBounds = L.latLngBounds();
+
+      let taichungCount = 0;
+
+      data.forEach((row, index) => {
+        // 清理標頭 BOM 與空白鍵
+        const cleanRow = {};
+        for (let key in row) {
+          const cleanKey = key.replace(/^\ufeff/, '').trim();
+          cleanRow[cleanKey] = row[key] ? row[key].trim() : '';
+        }
+
+        const id = cleanRow['編號'] || index;
+        const name = cleanRow['店家名稱標題'] || '未命名店家';
+        const lat = parseFloat(cleanRow['緯度']);
+        const lng = parseFloat(cleanRow['經度']);
+        const phone = cleanRow['電話'] || '無資料';
+        const intro = cleanRow['店家簡介'] || '暫無簡介資訊';
+        const parking = cleanRow['停車資訊'] || '';
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const storeObj = { id, name, lat, lng, phone, intro, parking };
+          allStores.push(storeObj);
+
+          // 判斷座標是否在台中市合理範圍 (緯度 24.0~24.5, 經度 120.4~121.0)
+          const isTaichung = (lat >= 24.0 && lat <= 24.5 && lng >= 120.4 && lng <= 121.0);
+          if (isTaichung) {
+            taichungBounds.extend([lat, lng]);
+            taichungCount++;
+          }
+
+          // 建立地圖 Marker 與 Popup
+          const popupContent = `
+            <div class="bg-indigo-600 text-white p-3">
+              <h3 class="font-bold text-base leading-snug">${name}</h3>
             </div>
-            <div class="flex items-center space-x-2">
-                <button id="reset-bounds-btn" class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                    <i class="fa-solid fa-expand text-[10px]"></i>
-                    <span>看全臺中</span>
-                </button>
+            <div class="p-3 space-y-2 text-xs text-slate-600">
+              <p class="flex items-center space-x-2">
+                <i class="fa-solid fa-phone text-indigo-500 w-4"></i>
+                <span>${phone !== '無資料' ? `<a href="tel:${phone}" class="text-indigo-600 hover:underline font-semibold">${phone}</a>` : '無電話資訊'}</span>
+              </p>
+              ${parking ? `
+              <p class="flex items-start space-x-2">
+                <i class="fa-solid fa-square-parking text-emerald-500 w-4 mt-0.5"></i>
+                <span>${parking}</span>
+              </p>` : ''}
+              <div class="border-t border-slate-100 pt-2 mt-2">
+                <p class="font-semibold text-slate-700 mb-1">店家簡介：</p>
+                <div class="popup-scroll text-slate-500 leading-relaxed">${intro}</div>
+              </div>
             </div>
+          `;
+
+          const marker = L.marker([lat, lng]).bindPopup(popupContent, { className: 'custom-popup' });
+          markersCluster.addLayer(marker);
+          markerMap.set(id, { marker, storeObj });
+        }
+      });
+
+      // 設定合理的初始視角：如果有台中市店家，自動計算 Bounds 調整；否則使用預設台中市政府視角
+      if (taichungCount > 0) {
+        map.fitBounds(taichungBounds, { padding: [40, 40] });
+      } else {
+        map.setView(defaultCenter, defaultZoom);
+      }
+
+      // 更新全域總筆數與呈現列表
+      document.getElementById('total-count').textContent = allStores.length;
+      renderStoreList(allStores);
+    }
+
+    // 渲染側邊欄店家列表
+    function renderStoreList(stores) {
+      const listContainer = document.getElementById('store-list');
+      document.getElementById('store-count').textContent = stores.length;
+
+      if (stores.length === 0) {
+        listContainer.innerHTML = `
+          <div class="p-8 text-center text-slate-400">
+            <i class="fa-solid fa-store-slash text-3xl mb-2"></i>
+            <p>查無符合關鍵字的店家</p>
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = stores.map(store => `
+        <div class="p-3 rounded-lg hover:bg-indigo-50 cursor-pointer transition flex justify-between items-center group" 
+             onclick="focusStore('${store.id}')">
+          <div class="space-y-1 flex-1 pr-2">
+            <h4 class="font-semibold text-sm text-slate-800 group-hover:text-indigo-600 transition">${store.name}</h4>
+            <p class="text-xs text-slate-500 flex items-center space-x-1">
+              <i class="fa-solid fa-phone text-slate-400"></i>
+              <span>${store.phone}</span>
+            </p>
+          </div>
+          <button class="text-slate-300 group-hover:text-indigo-500 p-2">
+            <i class="fa-solid fa-location-dot text-base"></i>
+          </button>
         </div>
+      `).join('');
+    }
 
-        <!-- Store List Results Panel -->
-        <div id="store-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-            <!-- Loading Indicator inside Sidebar -->
-            <div id="list-loading" class="flex flex-col items-center justify-center py-12 text-slate-400">
-                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-blue-500"></i>
-                <p class="text-sm font-medium">讀取與解析資料中...</p>
-            </div>
-        </div>
+    // 點擊清單定位店家
+    function focusStore(id) {
+      const item = markerMap.get(id);
+      if (item) {
+        const { marker, storeObj } = item;
+        markersCluster.zoomToShowLayer(marker, function() {
+          map.setView([storeObj.lat, storeObj.lng], 16, { animate: true });
+          marker.openPopup();
+        });
+      }
+    }
 
-        <!-- Footer / CSV Re-upload trigger fallback -->
-        <div class="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between items-center">
-            <span><i class="fa-solid fa-file-csv text-emerald-600 mr-1"></i>資料來源：台中市消費.csv</span>
-            <label for="manual-csv" class="cursor-pointer text-blue-600 hover:underline">手動載入 CSV</label>
-            <input type="file" id="manual-csv" accept=".csv" class="hidden">
-        </div>
-    </aside>
+    // 搜尋過濾功能
+    document.getElementById('search-input').addEventListener('input', function(e) {
+      const keyword = e.target.value.toLowerCase().trim();
+      if (!keyword) {
+        renderStoreList(allStores);
+        return;
+      }
 
-    <!-- Main Map View Area -->
-    <main class="flex-1 relative order-1 md:order-2 h-1/2 md:h-full">
-        <!-- Leaflet Map Div -->
-        <div id="map" class="w-full h-full z-10 bg-slate-200"></div>
+      const filtered = allStores.filter(s => 
+        s.name.toLowerCase().includes(keyword) || 
+        s.intro.toLowerCase().includes(keyword) || 
+        s.phone.includes(keyword)
+      );
 
-        <!-- Floating Quick Info Toast / Alert Overlay -->
-        <div id="toast-message" class="hidden absolute top-4 right-4 z-20 bg-slate-900/90 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs backdrop-blur-md flex items-center space-x-2 transition-opacity duration-300">
-            <i class="fa-solid fa-circle-info text-blue-400"></i>
-            <span id="toast-text">歡迎使用臺中市店家消費地圖</span>
-        </div>
-    </main>
+      renderStoreList(filtered);
+    });
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <!-- Leaflet MarkerCluster JS -->
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <!-- PapaParse CSV Parser -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    // 重置視角與復原全台中 Bounds
+    document.getElementById('reset-view-btn').addEventListener('click', () => {
+      if (taichungBounds.isValid()) {
+        map.fitBounds(taichungBounds, { padding: [40, 40] });
+      } else {
+        map.setView(defaultCenter, defaultZoom);
+      }
+    });
 
-    <script>
-        // Global State Variables
-        let map = null;
-        let markerClusterGroup = null;
-        let allStoresData = [];
-        let filteredStoresData = [];
-        let markerMap = new Map(); // Store ID -> Leaflet Marker Mapping
+    document.getElementById('fit-taichung-btn').addEventListener('click', () => {
+      if (taichungBounds.isValid()) {
+        map.fitBounds(taichungBounds, { padding: [40, 40] });
+      }
+    });
 
-        // Default Center fallback (Taichung Station)
-        const TAICHUNG_CENTER = [24.1373, 120.6869];
-        const DEFAULT_ZOOM = 13;
+    // 手動選擇 CSV 檔案監聽
+    document.getElementById('csv-file-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        loadCSVData(file);
+      }
+    });
 
-        function initMap() {
-            // Initialize Leaflet Map
-            map = L.map('map', {
-                zoomControl: false,
-                attributionControl: true
-            }).setView(TAICHUNG_CENTER, DEFAULT_ZOOM);
-
-            // Add Zoom Control to Top Right
-            L.control.zoom({ position: 'topright' }).addTo(map);
-
-            // OpenStreetMap Tile Layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            // Initialize MarkerCluster Group
-            markerClusterGroup = L.markerClusterGroup({
-                chunkedLoading: true,
-                spiderfyOnMaxZoom: true,
-                showCoverageOnHover: false,
-                zoomToBoundsOnClick: true,
-                maxClusterRadius: 50,
-                disableClusteringAtZoom: 18
-            });
-
-            map.addLayer(markerClusterGroup);
-        }
-
-        function showToast(message, duration = 3000) {
-            const toast = document.getElementById('toast-message');
-            const toastText = document.getElementById('toast-text');
-            toastText.textContent = message;
-            toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, duration);
-        }
-
-        // Clean potentially corrupted or messy strings
-        function cleanText(text) {
-            if (!text) return '無資料';
-            return String(text).trim().replace(/^"|"$/g, '');
-        }
-
-        // Extract and clean Lat/Lng coordinates safely
-        function parseCoordinate(value) {
-            if (!value) return null;
-            const num = parseFloat(String(value).trim());
-            return isNaN(num) ? null : num;
-        }
-
-        async function loadCSVData() {
-            const loadingElem = document.getElementById('list-loading');
-            if (loadingElem) loadingElem.style.display = 'flex';
-
-            try {
-                // Try fetching "台中市消費.csv" from current directory
-                const response = await fetch('台中市消費.csv');
-                if (!response.ok) {
-                    throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
-                }
-                const csvText = await response.text();
-                parseCSV(csvText);
-            } catch (error) {
-                console.warn('無法從預設路徑 fetch CSV (可能需要 Web Server 服務或關閉 CORS 阻擋):', error);
-                showToast('請使用畫面下方的「手動載入 CSV」選擇 台中市消費.csv 檔案', 6000);
-                
-                // Render error state in list
-                const storeList = document.getElementById('store-list');
-                storeList.innerHTML = `
-                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs leading-relaxed">
-                        <div class="font-bold flex items-center space-x-1 text-sm mb-1 text-amber-900">
-                            <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
-                            <span>提示：未偵測到自動載入的 CSV</span>
-                        </div>
-                        <p class="mb-2">若您是雙擊開啟 HTML 檔 (file:// 協定)，瀏覽器會因為安全限制阻擋檔名讀取。</p>
-                        <p class="font-medium text-blue-700 underline cursor-pointer" onclick="document.getElementById('manual-csv').click()">
-                            👉 請點擊這裡手動選擇同目錄下的 「台中市消費.csv」
-                        </p>
-                    </div>
-                `;
-            }
-        }
-
-        function parseCSV(csvContent) {
-            // Use PapaParse to safely handle multiline quoted summaries & UTF-8 BOM
-            Papa.parse(csvContent, {
-                header: true,
-                skipEmptyLines: true,
-                dynamicTyping: false,
-                complete: function(results) {
-                    processParsedStores(results.data);
-                },
-                error: function(err) {
-                    console.error('CSV 解析錯誤:', err);
-                    showToast('CSV 格式解析失敗', 4000);
-                }
-            });
-        }
-
-        function processParsedStores(rawData) {
-            allStoresData = [];
-            markerMap.clear();
-
-            rawData.forEach((row, index) => {
-                // Find dynamic column names even if header contains BOM or minor variations
-                const keys = Object.keys(row);
-                
-                const findKey = (candidates) => {
-                    return keys.find(k => candidates.some(c => k.toLowerCase().includes(c.toLowerCase())));
-                };
-
-                const nameKey = findKey(['特約店家名稱', '名稱', '店家名稱', 'Title']) || keys[0];
-                const latKey = findKey(['緯度', 'Lat', 'Latitude']);
-                const lngKey = findKey(['經度', 'Lng', 'Longitude', 'Lon']);
-                const telKey = findKey(['電話', 'Tel', 'Phone']);
-                const addrKey = findKey(['地址', 'Address']);
-                const summaryKey = findKey(['簡介', 'Summary', 'Description']);
-                const parkKey = findKey(['停車資訊', '停車', 'Parking']);
-
-                const name = cleanText(row[nameKey]);
-                const lat = parseCoordinate(row[latKey]);
-                const lng = parseCoordinate(row[lngKey]);
-
-                // Filter out records without valid spatial coordinate pairs
-                if (lat !== null && lng !== null && lat >= 21 && lat <= 26 && lng >= 118 && lng <= 123) {
-                    allStoresData.push({
-                        id: `store_${index}`,
-                        name: name || '未命名店家',
-                        lat: lat,
-                        lng: lng,
-                        tel: cleanText(row[telKey]),
-                        address: cleanText(row[addrKey]),
-                        summary: cleanText(row[summaryKey]),
-                        parking: cleanText(row[parkKey])
-                    });
-                }
-            });
-
-            document.getElementById('total-count').textContent = allStoresData.length;
-            filteredStoresData = [...allStoresData];
-            
-            // Render Markers & Sidebar List
-            renderMapAndList();
-            showToast(`成功載入 ${allStoresData.length} 筆店家資料`);
-        }
-
-        function createPopupContent(store) {
-            const telLink = store.tel && store.tel !== '無資料' 
-                ? `<a href="tel:${store.tel}" class="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 px-2 py-1 rounded border border-blue-100 text-xs">
-                     <i class="fa-solid fa-phone"></i>
-                     <span>${store.tel}</span>
-                   </a>`
-                : `<span class="text-slate-400 text-xs">未提供電話</span>`;
-
-            const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
-
-            return `
-                <div class="flex flex-col bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100">
-                    <!-- Popup Header Header Banner -->
-                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-3.5 text-white">
-                        <div class="flex justify-between items-start pr-4">
-                            <h3 class="font-bold text-base leading-snug line-clamp-2">${store.name}</h3>
-                        </div>
-                    </div>
-
-                    <!-- Popup Body -->
-                    <div class="p-3.5 space-y-3 text-xs text-slate-600">
-                        <!-- Phone & Nav Action -->
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                            ${telLink}
-                            <a href="${navUrl}" target="_blank" class="inline-flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-2.5 py-1 rounded-lg transition text-xs shadow-sm">
-                                <i class="fa-solid fa-location-arrow"></i>
-                                <span>導航</span>
-                            </a>
-                        </div>
-
-                        <!-- Address -->
-                        ${store.address && store.address !== '無資料' ? `
-                            <div class="flex items-start space-x-2 text-slate-700">
-                                <i class="fa-solid fa-location-dot text-rose-500 mt-0.5 flex-shrink-0"></i>
-                                <span class="break-all">${store.address}</span>
-                            </div>
-                        ` : ''}
-
-                        <!-- Description Summary with fixed scrollable box -->
-                        ${store.summary && store.summary !== '無資料' ? `
-                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                                <p class="text-[11px] font-semibold text-slate-500 mb-1 flex items-center">
-                                    <i class="fa-solid fa-circle-info mr-1 text-blue-500"></i> 店家簡介
-                                </p>
-                                <div class="max-h-28 overflow-y-auto custom-scrollbar text-slate-600 leading-relaxed text-[11px] pr-1">
-                                    ${store.summary}
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        <!-- Parking Info -->
-                        ${store.parking && store.parking !== '無資料' ? `
-                            <div class="flex items-start space-x-1.5 text-amber-700 bg-amber-50 p-2 rounded-lg text-[11px] border border-amber-200/60">
-                                <i class="fa-solid fa-square-parking text-amber-600 text-sm mt-0.5 flex-shrink-0"></i>
-                                <div>
-                                    <span class="font-semibold">停車資訊：</span>
-                                    <span>${store.parking}</span>
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderMapAndList() {
-            // Clear existing markers
-            markerClusterGroup.clearLayers();
-            markerMap.clear();
-
-            const storeListElem = document.getElementById('store-list');
-            storeListElem.innerHTML = '';
-
-            document.getElementById('store-count').textContent = filteredStoresData.length;
-
-            if (filteredStoresData.length === 0) {
-                storeListElem.innerHTML = `
-                    <div class="text-center py-12 text-slate-400">
-                        <i class="fa-solid fa-store-slash text-4xl mb-2 text-slate-300"></i>
-                        <p class="text-sm font-medium">找不到符合的店家</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const bounds = L.latLngBounds();
-
-            // Custom Leaflet Marker Icon
-            const storeIcon = L.divIcon({
-                className: 'custom-store-pin',
-                html: `
-                    <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:bg-indigo-600 transition-transform duration-200 transform hover:scale-110">
-                        <i class="fa-solid fa-bag-shopping text-xs"></i>
-                    </div>
-                `,
-                iconSize: [32, 32],
-                iconAnchor: [16, 32],
-                popupAnchor: [0, -32]
-            });
-
-            // Loop and add markers
-            filteredStoresData.forEach((store) => {
-                const latLng = [store.lat, store.lng];
-                bounds.extend(latLng);
-
-                // Create Marker
-                const marker = L.marker(latLng, { icon: storeIcon });
-                marker.bindPopup(createPopupContent(store));
-
-                markerClusterGroup.addLayer(marker);
-                markerMap.set(store.id, marker);
-
-                // Render Sidebar Card Element
-                const card = document.createElement('div');
-                card.className = "p-3 bg-white hover:bg-blue-50/50 rounded-xl border border-slate-200/80 shadow-sm hover:shadow transition duration-150 cursor-pointer group";
-                card.innerHTML = `
-                    <div class="flex items-start justify-between">
-                        <h4 class="font-bold text-sm text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1">${store.name}</h4>
-                        <span class="text-[10px] bg-slate-100 group-hover:bg-blue-100 text-slate-500 group-hover:text-blue-700 px-1.5 py-0.5 rounded font-mono ml-2 flex-shrink-0">
-                            <i class="fa-solid fa-location-dot mr-0.5"></i>開啟
-                        </span>
-                    </div>
-                    ${store.address && store.address !== '無資料' ? `
-                        <p class="text-xs text-slate-500 mt-1 line-clamp-1">
-                            <i class="fa-solid fa-map-pin text-slate-400 mr-1 text-[10px]"></i>${store.address}
-                        </p>
-                    ` : ''}
-                `;
-
-                // Card Click Trigger Popup on Map
-                card.addEventListener('click', () => {
-                    focusStoreOnMap(store);
-                });
-
-                storeListElem.appendChild(card);
-            });
-
-            // Auto-fit Bounds if valid bounds exist
-            if (filteredStoresData.length > 0 && bounds.isValid()) {
-                map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-            }
-        }
-
-        function focusStoreOnMap(store) {
-            const marker = markerMap.get(store.id);
-            if (marker) {
-                markerClusterGroup.zoomToShowLayer(marker, () => {
-                    map.setView([store.lat, store.lng], 17, { animate: true });
-                    marker.openPopup();
-                });
-            }
-        }
-
-        function setupSearchFilter() {
-            const searchInput = document.getElementById('search-input');
-            const clearBtn = document.getElementById('clear-search');
-
-            let debounceTimer;
-
-            searchInput.addEventListener('input', (e) => {
-                const query = e.target.value.trim().toLowerCase();
-
-                // Toggle Clear Button Visibility
-                if (query.length > 0) {
-                    clearBtn.classList.remove('hidden');
-                } else {
-                    clearBtn.classList.add('hidden');
-                }
-
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    if (!query) {
-                        filteredStoresData = [...allStoresData];
-                    } else {
-                        filteredStoresData = allStoresData.filter(store => 
-                            store.name.toLowerCase().includes(query) ||
-                            store.summary.toLowerCase().includes(query) ||
-                            store.address.toLowerCase().includes(query)
-                        );
-                    }
-                    renderMapAndList();
-                }, 250);
-            });
-
-            clearBtn.addEventListener('click', () => {
-                searchInput.value = '';
-                clearBtn.classList.add('hidden');
-                filteredStoresData = [...allStoresData];
-                renderMapAndList();
-            });
-
-            // Reset bounds button
-            document.getElementById('reset-bounds-btn').addEventListener('click', () => {
-                if (allStoresData.length > 0) {
-                    const bounds = L.latLngBounds(allStoresData.map(s => [s.lat, s.lng]));
-                    if (bounds.isValid()) {
-                        map.fitBounds(bounds, { padding: [30, 30] });
-                    }
-                }
-            });
-
-            // Top-right Refresh button
-            document.getElementById('refresh-btn').addEventListener('click', () => {
-                searchInput.value = '';
-                clearBtn.classList.add('hidden');
-                filteredStoresData = [...allStoresData];
-                renderMapAndList();
-                showToast('已將搜尋地圖重置');
-            });
-        }
-
-        function setupManualUpload() {
-            const uploadInput = document.getElementById('manual-csv');
-            uploadInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    parseCSV(evt.target.result);
-                };
-                reader.readAsText(file, 'UTF-8');
-            });
-        }
-
-        window.onload = function() {
-            initMap();
-            setupSearchFilter();
-            setupManualUpload();
-            loadCSVData();
-        };
-    </script>
+    // 頁面初始化：優先讀取同目錄下的「台中市消費.csv」
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCSVData('./台中市消費.csv');
+    });
+  </script>
 </body>
 </html>
