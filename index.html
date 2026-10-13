@@ -118,12 +118,12 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // 建立優化後的 MarkerClusterGroup
+    // 建立地區小組與區以下全面解散的 MarkerClusterGroup
     const markersCluster = L.markerClusterGroup({
       chunkedLoading: true,
-      maxClusterRadius: 80,          // 【修改點】大幅調大聚合半徑，強制將鄰近的點合併在一起
-      disableClusteringAtZoom: 16,  // 【修改點】放大到街道層級（16級）時，自動解散所有聚合圈
-      spiderfyOnMaxZoom: true       // 同座標點擊時以蜘蛛網狀展開
+      maxClusterRadius: 60,          // 遠看時以「區域/行政區小組」為單位進行分組
+      disableClusteringAtZoom: 13,  // 放大到「區」以下（Zoom Level 13 及以上），完全取消聚合，直接顯示所有店家點位
+      spiderfyOnMaxZoom: true       // 同一極端重疊座標點擊時蜘蛛網狀散開
     });
     map.addLayer(markersCluster);
 
