@@ -121,8 +121,8 @@
     // 建立優化後的 MarkerClusterGroup
     const markersCluster = L.markerClusterGroup({
       chunkedLoading: true,
-      maxClusterRadius: 25,          // 縮小聚合半徑，稍微靠近就分開
-      disableClusteringAtZoom: 16,  // 地圖放大到 16 級（街道層級）時，自動解散所有圈圈，全數呈現在地圖上
+      maxClusterRadius: 80,          // 【修改點】大幅調大聚合半徑，強制將鄰近的點合併在一起
+      disableClusteringAtZoom: 16,  // 【修改點】放大到街道層級（16級）時，自動解散所有聚合圈
       spiderfyOnMaxZoom: true       // 同座標點擊時以蜘蛛網狀展開
     });
     map.addLayer(markersCluster);
